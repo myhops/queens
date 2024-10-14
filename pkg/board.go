@@ -19,7 +19,7 @@ const (
 	IsBlocked
 )
 
-type Position struct{ x, y int }
+
 
 type Board struct {
 	fields [][]fieldState // x, y
@@ -123,7 +123,7 @@ func (p Position) onField(size int) bool {
 	return 0 < p.x && p.x < size && 0 < p.y && p.y < size
 }
 
-func validateAreas(size int, areas []Area) error {
+func validateAreasForOverlap(size int, areas []Area) error {
 	fields := newFields(size)
 
 	for ia := range areas {
@@ -143,11 +143,14 @@ func validateAreas(size int, areas []Area) error {
 }
 
 func NewBoard(size int, crowns []Position, areas []Area) (*Board, error) {
-	// Te
+	if err := validateAreasForOverlap(size, areas); err != nil {
+		return nil, err
+	}
 
 	// Create a new board.
 	b := &Board{
-		fields: make([][]fieldState, size),
+		fields: newFields(size),
+		areas: areas,
 	}
 
 	return b, nil
