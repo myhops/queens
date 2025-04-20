@@ -27,7 +27,8 @@ func TestLoad(t *testing.T) {
 	// t.Error()
 
 	g := NewGame(i, i, a...)
-	b, err := g.Solve()
+	s := &SimpleSolver{}
+	b, err := g.Solve(s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +58,8 @@ func TestLoad2(t *testing.T) {
 	// t.Error()
 
 	g := NewGame(i, i, a...)
-	b, err := g.Solve()
+	s := &SimpleSolver{}
+	b, err := g.Solve(s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +93,74 @@ func TestLoad3(t *testing.T) {
 	// t.Error()
 
 	g := NewGame(i, i, a...)
-	b, err := g.Solve()
+	s := &SimpleSolver{}
+	b, err := g.Solve(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b.Print()
+
+	t.Errorf("solve called: %d", g.SolveCalled())
+	t.Errorf("boards used: %d", g.BoardPool.MaxEntries())
+	t.Error()
+}
+
+func TestLoad4(t *testing.T) {
+	const board = `0	0	0	0	0	0	2	2	2
+1	0	0	6	0	0	0	2	2
+1	0	4	6	0	0	0	0	2
+1	0	4	6	7	8	0	2	2
+1	0	4	7	7	8	9	2	2
+1	1	4	7	7	8	9	2	2
+3	3	4	7	7	8	9	2	2
+3	3	3	7	7	8	9	2	2
+3	2	2	2	2	2	2	2	2
+`
+
+	r := strings.NewReader(board)
+	a, i, err := LoadAreas(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// t.Logf("dim %d, areas: %#v", i, a)
+	// t.Error()
+
+	g := NewGame(i, i, a...)
+	s := &AreaSolver{}
+	b, err := g.Solve(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b.Print()
+
+	t.Errorf("solve called: %d", g.SolveCalled())
+	t.Errorf("boards used: %d", g.BoardPool.MaxEntries())
+	t.Error()
+}
+
+func TestLoad5(t *testing.T) {
+	const board = `0	0	0	0	0	0	0
+0	2	2	2	2	2	0
+0	2	4	4	4	2	0
+1	2	4	5	4	2	0
+1	1	4	5	4	3	3
+1	1	1	1	3	3	3
+1	1	1	6	6	3	3
+`
+
+	r := strings.NewReader(board)
+	a, i, err := LoadAreas(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// t.Logf("dim %d, areas: %#v", i, a)
+	// t.Error()
+
+	g := NewGame(i, i, a...)
+	s := &AreaSolver{}
+	b, err := g.Solve(s)
 	if err != nil {
 		t.Fatal(err)
 	}

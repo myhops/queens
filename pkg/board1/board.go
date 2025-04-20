@@ -120,8 +120,6 @@ func (b *Board) Get(row, col int) State {
 
 type Position []int // row, col
 
-type Area []Position
-
 func (g *Game) PlaceQueen(b *Board, row, col int) error {
 	if b.Get(row, col) != Empty {
 		return fmt.Errorf("position (%d, %d) is occupied with %s", row, col, b.Get(row, col).String())
@@ -137,18 +135,9 @@ func (g *Game) PlaceQueen(b *Board, row, col int) error {
 	return nil
 }
 
-func (a Area) contains(row, col int) bool {
-	for _, pos := range a {
-		if pos[0] == row && pos[1] == col {
-			return true
-		}
-	}
-	return false
-}
-
 func (g *Game) inArea(row, col int) Area {
 	for _, area := range g.Areas {
-		if area.contains(row, col) {
+		if area.Contains(row, col) {
 			return area
 		}
 	}
@@ -220,12 +209,6 @@ func (b *Board) Print() {
 	}
 }
 
-// // Solve the board by placing n queens
-// func (b *Board) Solve() ([]Position, error) {
-// 	var res []Position
-// 	return b.solve(res)
-// }
-
 func (b *Board) Next(row, col int) (int, int, error) {
 	maxPos := b.Rows * b.Cols
 	pos := row*b.Cols + col + 1
@@ -247,54 +230,22 @@ func (b *Board) FindNextEmpty(row, col int) (int, int, error) {
 	return b.FindEmpty(row, col)
 }
 
-// func (b *Board) solve(queens []Position) ([]Position, error) {
-// 	// Test if done
-// 	if len(queens) == len(b.Fields) {
-// 		return queens, nil
-// 	}
-
-// 	last := Position{0, 0}
-// 	for {
-// 		// Clear the fields
-// 		b.ClearFields()
-
-// 		// Place the queens
-// 		b.PlaceQueens(queens)
-
-// 		nx, ny, err := b.FindEmpty(last)
-// 		// No empty place found
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		// found an empty slot
-// 		// add the queen and try to solve the rest of the puzzle
-// 		res, err := b.solve(append(queens, try))
-// 		if err == nil {
-// 			return res, nil
-// 		}
-
-// 		// if an error occured, advance last and continue
-// 		l, err := b.Next(last)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		last = l
-// 	}
-// }
-
 func (g *Game) PlaceQueens(b *Board, queens []Position) {
 	for _, queen := range queens {
 		g.PlaceQueen(b, queen[0], queen[1])
 	}
 }
 
-func (g *Game) Solve() (*Board, error) {
+type Solver interface {
+	Solve(g *Game) (*Board, error)
+}
+
+func (g *Game) Solve(solver Solver) (*Board, error) {
 	g.solveCalled = 0
 	b := g.BoardPool.Get()
 	defer g.BoardPool.Put(b)
 
-	return g.solveBoard(b, g.Cols)
+	return solver.Solve(g)
 }
 
 func (b *Board) CopyFrom(bc *Board) {
