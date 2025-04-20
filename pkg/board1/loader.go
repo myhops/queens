@@ -3,6 +3,7 @@ package board1
 import (
 	"bufio"
 	"io"
+	"strings"
 )
 
 func LoadAreas(r io.Reader) ([]Area, int, error) {
@@ -12,6 +13,13 @@ func LoadAreas(r io.Reader) ([]Area, int, error) {
 	var x int
 	for s.Scan() {
 		line := s.Text()
+		// skip empty line
+		if 	line == "" {
+			continue
+		}
+		// remove all spaces
+		line = strings.ReplaceAll(line, " ", "")
+		line = strings.ReplaceAll(line, "\t", "")
 		var y int
 		for _, c := range line {
 			m[c] = append(m[c], Position{x, y})

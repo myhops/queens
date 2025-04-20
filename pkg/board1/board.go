@@ -1,9 +1,9 @@
 package board1
 
 import (
+	"errors"
 	"fmt"
-	"iter"
-	"slices"
+	"sync"
 )
 
 type State int
@@ -27,44 +27,130 @@ func (s State) String() string {
 	}
 }
 
-type Board struct {
-	Fields [][]State // row, col (row 0 is the top)
+type BoardPool struct {
+	pool sync.Pool
+	rows int
+	cols int
 
+	maxEntries int
+}
+
+func NewBoardPool(rows, cols int) *BoardPool {
+	bp := &BoardPool{
+		rows: rows,
+		cols: cols,
+		pool: sync.Pool{
+			New: func() any {
+				return &Board{
+					Fields: make([]State, rows*cols),
+					Rows:   rows,
+					Cols:   cols,
+				}
+			},
+		},
+	}
+	bp.pool.New = bp.New
+	return bp
+}
+
+func (p *BoardPool) New() any {
+	b := &Board{
+		Fields: make([]State, p.rows*p.cols),
+		Rows:   p.rows,
+		Cols:   p.cols,
+	}
+	p.maxEntries++
+	return b
+}
+
+func (p *BoardPool) Get() *Board {
+	bp := p.pool.Get().(*Board)
+	clear(bp.Fields)
+	return bp
+}
+
+func (p *BoardPool) Put(b *Board) {
+	p.pool.Put(b)
+}
+
+func (p *BoardPool) MaxEntries() int {
+	return p.maxEntries
+}
+
+type Game struct {
 	Areas []Area
+	Rows  int
+	Cols  int
+
+	BoardPool *BoardPool
+
+	solveCalled int
+}
+
+func NewGame(rows, cols int, areas ...Area) *Game {
+	return &Game{
+		Rows:      rows,
+		Cols:      cols,
+		BoardPool: NewBoardPool(rows, cols),
+		Areas:     areas,
+	}
+}
+
+type Board struct {
+	Fields []State
+	Rows   int
+	Cols   int
+}
+
+// Put places a state on the board.
+// Panics if the index is out of range
+func (b *Board) Put(row, col int, s State) {
+	if row < 0 || row >= b.Rows || col < 0 || col >= b.Cols {
+		panic("index out of range")
+	}
+	b.Fields[row*b.Cols+col] = s
+}
+
+func (b *Board) Get(row, col int) State {
+	if row < 0 || row >= b.Rows || col < 0 || col >= b.Cols {
+		panic("index out of range")
+	}
+	return b.Fields[row*b.Cols+col]
 }
 
 type Position []int // row, col
 
 type Area []Position
 
-func NewBoard(size int, areas ...Area) *Board {
-	b := &Board{
-		Fields: make([][]State, size),
+func (g *Game) PlaceQueen(b *Board, row, col int) error {
+	if b.Get(row, col) != Empty {
+		return fmt.Errorf("position (%d, %d) is occupied with %s", row, col, b.Get(row, col).String())
 	}
+	b.Put(row, col, Queen)
+	b.blockAround(row, col)
+	b.blockRow(row)
+	b.blockColumn(col)
 
-	for i := range b.Fields {
-		b.Fields[i] = make([]State, size)
+	if a := g.inArea(row, col); a != nil {
+		b.blockArea(a)
 	}
-
-	// Create our own copy
-	b.Areas = slices.Clone(areas)
-
-	return b
+	return nil
 }
 
-func (b *Board) PlaceQueen(p Position) error {
-	row := p[0]
-	col := p[1]
-	if b.Fields[row][col] != Empty {
-		return fmt.Errorf("position (%d, %d) is occupied with %s", row, col, b.Fields[row][col].String())
+func (a Area) contains(row, col int) bool {
+	for _, pos := range a {
+		if pos[0] == row && pos[1] == col {
+			return true
+		}
 	}
-	b.Fields[row][col] = Queen
-	b.blockAround(row, col)
-	b.blockHorizontal(row)
-	b.blockVertical(col)
+	return false
+}
 
-	for _, area := range b.Areas {
-		b.blockArea(area)
+func (g *Game) inArea(row, col int) Area {
+	for _, area := range g.Areas {
+		if area.contains(row, col) {
+			return area
+		}
 	}
 	return nil
 }
@@ -72,134 +158,178 @@ func (b *Board) PlaceQueen(p Position) error {
 func (b *Board) blockArea(area Area) {
 	for _, pos := range area {
 		x, y := pos[0], pos[1]
-		if b.Fields[x][y] == Empty {
-			b.Fields[x][y] = Blocked
+		if b.Get(x, y) == Empty {
+			b.Put(x, y, Blocked)
 		}
 	}
 }
 
 func (b *Board) blockAround(row, col int) {
-	for i := max(row-1, 0); i < min(row+2, len(b.Fields)); i++ {
-		for j := max(col-1, 0); j < min(col+2, len(b.Fields)); j++ {
-			if b.Fields[i][j] == Empty {
-				b.Fields[i][j] = Blocked
+	for i := max(row-1, 0); i < min(row+2, b.Rows); i++ {
+		for j := max(col-1, 0); j < min(col+2, b.Cols); j++ {
+			if b.Get(i, j) == Empty {
+				b.Put(i, j, Blocked)
 			}
 		}
 	}
 }
 
-func (b *Board) blockHorizontal(x int) {
-	for i := range len(b.Fields) {
-		if b.Fields[x][i] == Empty {
-			b.Fields[x][i] = Blocked
+// blockRow blockx all fields in row row
+func (b *Board) blockRow(row int) {
+	for i := range b.Cols {
+		if b.Get(row, i) == Empty {
+			b.Put(row, i, Blocked)
 		}
 	}
 }
-func (b *Board) blockVertical(y int) {
-	for i := 0; i < len(b.Fields); i++ {
-		if b.Fields[i][y] == Empty {
-			b.Fields[i][y] = Blocked
+
+func (b *Board) blockColumn(col int) {
+	for i := 0; i < b.Rows; i++ {
+		if b.Get(i, col) == Empty {
+			b.Put(i, col, Blocked)
 		}
 	}
 }
 
 func (b *Board) ClearFields() {
-	for i := range b.Fields {
-		for j := range b.Fields[i] {
-			b.Fields[i][j] = Empty
-		}
-	}
+	clear(b.Fields)
 }
 
-func (b *Board) FindEmpty(from Position) (Position, error) {
-	if from[0] > len(b.Fields) || from[1] > len(b.Fields[0]) {
-		return Position{0, 0}, fmt.Errorf("out of range")
+var ErrNoEmptyFound = errors.New("no empty position found")
+
+func (b *Board) FindEmpty(row, col int) (int, int, error) {
+	if row >= b.Rows || col >= b.Cols {
+		return 0, 0, fmt.Errorf("out of range")
 	}
-	for i := from[0]; i < len(b.Fields); i++ {
-		for j := from[1]; j < len(b.Fields); j++ {
-			if b.Fields[i][j] == Empty {
-				return Position{i, j}, nil
+	for i := row; i < b.Rows; i++ {
+		for j := col; j < b.Cols; j++ {
+			if b.Get(i, j) == Empty {
+				return i, j, nil
 			}
 		}
 	}
-	return nil, fmt.Errorf("no empty position found")
+	return 0, 0, ErrNoEmptyFound
 }
 
 func (b *Board) Print() {
-	for i := range b.Fields {
-		for j := range b.Fields[i] {
-			fmt.Print(b.Fields[i][j].String())
+	for i := range b.Rows {
+		for j := range b.Cols {
+			fmt.Print(b.Get(i, j).String())
 		}
 		fmt.Println()
 	}
 }
 
-// Solve the board by placing n queens
-func (b *Board) Solve() ([]Position, error) {
-	var res []Position
-	return b.solve(res)
+// // Solve the board by placing n queens
+// func (b *Board) Solve() ([]Position, error) {
+// 	var res []Position
+// 	return b.solve(res)
+// }
+
+func (b *Board) Next(row, col int) (int, int, error) {
+	maxPos := b.Rows * b.Cols
+	pos := row*b.Cols + col + 1
+
+	if pos >= maxPos {
+		return 0, 0, fmt.Errorf("no more positions")
+	}
+
+	row = pos / b.Cols
+	col = pos % b.Cols
+	return row, col, nil
 }
 
-func (b *Board) Remaining(p Position) iter.Seq[Position] {
-	return func(yield func(p Position) bool) {
-		l := len(b.Fields) * len(b.Fields[0])
-		for i := range l {
-			x := i / len(b.Fields)
-			y := i % len(b.Fields[0])
+func (b *Board) FindNextEmpty(row, col int) (int, int, error) {
+	row, col, err := b.Next(row, col)
+	if err != nil {
+		return 0, 0, err
+	}
+	return b.FindEmpty(row, col)
+}
 
-			if !yield(Position{x, y}) {
-				return
-			}
-		}
+// func (b *Board) solve(queens []Position) ([]Position, error) {
+// 	// Test if done
+// 	if len(queens) == len(b.Fields) {
+// 		return queens, nil
+// 	}
+
+// 	last := Position{0, 0}
+// 	for {
+// 		// Clear the fields
+// 		b.ClearFields()
+
+// 		// Place the queens
+// 		b.PlaceQueens(queens)
+
+// 		nx, ny, err := b.FindEmpty(last)
+// 		// No empty place found
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		// found an empty slot
+// 		// add the queen and try to solve the rest of the puzzle
+// 		res, err := b.solve(append(queens, try))
+// 		if err == nil {
+// 			return res, nil
+// 		}
+
+// 		// if an error occured, advance last and continue
+// 		l, err := b.Next(last)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		last = l
+// 	}
+// }
+
+func (g *Game) PlaceQueens(b *Board, queens []Position) {
+	for _, queen := range queens {
+		g.PlaceQueen(b, queen[0], queen[1])
 	}
 }
 
-func (b *Board) Next(p Position) (Position, error) {
-	pos := p[0]*len(b.Fields) + p[1] + 1
-	if pos >= len(b.Fields)*len(b.Fields[0]) {
-		return Position{}, fmt.Errorf("no more positions")
-	}
-	return Position{pos / len(b.Fields), pos % len(b.Fields[0])}, nil
+func (g *Game) Solve() (*Board, error) {
+	g.solveCalled = 0
+	b := g.BoardPool.Get()
+	defer g.BoardPool.Put(b)
+
+	return g.solveBoard(b, g.Cols)
 }
 
-func (b *Board) solve(queens []Position) ([]Position, error) {
-	// Test if done
-	if len(queens) == len(b.Fields) {
-		return queens, nil
+func (b *Board) CopyFrom(bc *Board) {
+	copy(b.Fields, bc.Fields)
+	b.Rows = bc.Rows
+	b.Cols = bc.Cols
+}
+
+func (g *Game) SolveCalled() int {
+	return g.solveCalled
+}
+
+var ErrNoSolution = errors.New("no solution found")
+
+func (g *Game) solveBoard(b *Board, n int) (*Board, error) {
+	if n == 0 {
+		return b, nil
 	}
+	g.solveCalled++
 
-	last := Position{0, 0}
-	for {
-		// Clear the fields
-		b.ClearFields()
-
-		// Place the queens
-		b.PlaceQueens(queens)
-		
-		try, err := b.FindEmpty(last)
-		// No empty place found
-		if err != nil {
+	for row, col, err := b.FindEmpty(0, 0); err == nil; row, col, err = b.FindNextEmpty(row, col) {
+		// Create a new board
+		nb := g.BoardPool.Get()
+		nb.CopyFrom(b)
+		// Place the queen on the empty place, return on error
+		if err := g.PlaceQueen(nb, row, col); err != nil {
 			return nil, err
 		}
-
-		// found an empty slot
-		// add the queen and try to solve the rest of the puzzle
-		res, err := b.solve(append(queens, try))
+		// Try to solve this board
+		res, err := g.solveBoard(nb, n-1)
 		if err == nil {
 			return res, nil
 		}
-
-		// if an error occured, advance last and continue
-		l, err := b.Next(last)
-		if err != nil {
-			return nil, err
-		}
-		last = l
+		// No solution found, return the board to the pool
+		g.BoardPool.pool.Put(nb)
 	}
-}
-
-func (b *Board) PlaceQueens(queens []Position) {
-	for _, queen := range queens {
-		b.PlaceQueen(queen)
-	}
+	return nil, ErrNoSolution
 }
