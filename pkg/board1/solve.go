@@ -7,6 +7,9 @@ func (s *AreaSolver) Solve(g *Game) (*Board, error) {
 	b := g.BoardPool.Get()
 	defer g.BoardPool.Put(b)
 
+	// Sort the areas
+	SortAreasReverse(g.Areas)
+
 	return s.solveBoard(g, b, g.Cols)
 }
 
