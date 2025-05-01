@@ -3,7 +3,7 @@ package sheets
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"log"
 	"net/http"
 	"os"
 	"strings" // Import strings package
@@ -15,13 +15,8 @@ import (
 )
 
 func NewSheetReader() {
-	
 
 }
-
-
-
-
 
 // --- Configuration ---
 const (
@@ -87,7 +82,7 @@ func getAuthenticatedClient(ctx context.Context, credentialPath string) (*http.C
 	// Define required scopes: Drive (to find the file) and Sheets (to read content)
 	// Readonly scopes are sufficient for this reading task.
 	config, err := google.JWTConfigFromJSON(b,
-		drive.DriveReadonlyScope,         // Scope to search/find files
+		drive.DriveReadonlyScope,          // Scope to search/find files
 		gsheets.SpreadsheetsReadonlyScope, // Scope to read sheet values
 	)
 	if err != nil {
