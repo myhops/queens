@@ -34,7 +34,7 @@ func TestLoad(t *testing.T) {
 	}
 
 	b.Print()
-	t.Error()
+	// t.Error()
 }
 
 func TestLoad2(t *testing.T) {
@@ -66,9 +66,9 @@ func TestLoad2(t *testing.T) {
 
 	b.Print()
 
-	t.Errorf("solve called: %d", g.SolveCalled())
-	t.Errorf("boards used: %d", g.BoardPool.MaxEntries())
-	t.Error()
+	t.Logf("solve called: %d", g.SolveCalled())
+	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
+	// t.Error()
 }
 
 
@@ -101,9 +101,9 @@ func TestLoad3(t *testing.T) {
 
 	b.Print()
 
-	t.Errorf("solve called: %d", g.SolveCalled())
-	t.Errorf("boards used: %d", g.BoardPool.MaxEntries())
-	t.Error()
+	t.Logf("solve called: %d", g.SolveCalled())
+	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
+	// t.Error()
 }
 
 func TestLoad4(t *testing.T) {
@@ -135,9 +135,9 @@ func TestLoad4(t *testing.T) {
 
 	b.Print()
 
-	t.Errorf("solve called: %d", g.SolveCalled())
-	t.Errorf("boards used: %d", g.BoardPool.MaxEntries())
-	t.Error()
+	t.Logf("solve called: %d", g.SolveCalled())
+	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
+	// t.Error()
 }
 
 func TestLoad5(t *testing.T) {
@@ -167,7 +167,7 @@ func TestLoad5(t *testing.T) {
 
 	b.Print()
 
-	t.Errorf("solve called: %d", g.SolveCalled())
-	t.Errorf("boards used: %d", g.BoardPool.MaxEntries())
-	t.Error()
+	t.Logf("solve called: %d", g.SolveCalled())
+	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
+	// t.Error()
 }
