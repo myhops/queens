@@ -133,7 +133,12 @@ func (g *Game) PlaceQueen(b *Board, row, col int) error {
 	if a := g.inArea(row, col); a != nil {
 		b.blockArea(a)
 	}
+	g.queenPlaced++
 	return nil
+}
+
+func (g *Game) QueenPlaced() int64 {
+	return g.queenPlaced
 }
 
 func (g *Game) inArea(row, col int) Area {

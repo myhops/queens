@@ -111,6 +111,7 @@ func run(args []string) error {
 	}
 
 	b.Print()
+	fmt.Printf("number of times queen placed: %d\n", g.QueenPlaced())
 	fmt.Printf("solve called: %d\n", g.SolveCalled())
 	fmt.Printf("boards used: %d\n", g.BoardPool.MaxEntries())
 
