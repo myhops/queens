@@ -19,6 +19,7 @@ func (s *AreaSolver) solveBoard(g *Game, b *Board, n int) (*Board, error) {
 	}
 	g.solveCalled++
 
+	// Get the last area of areas
 	a := g.Areas[n-1]
 
 	for _, p := range a {

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"runtime/pprof"
 	"time"
@@ -57,6 +58,9 @@ func loadAreas(gameFile string) ([]board1.Area, int, error) {
 }
 
 func run(args []string) error {
+	logger := slog.Default().With(
+		"method", "run",
+	)
 	defer func(start time.Time) {
 		fmt.Printf("queens took %v\n", time.Since(start))
 	}(time.Now())
@@ -80,6 +84,10 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("loaded areas", "count", len(a), "board_size", i)
+	if len(a) != i {
+		return fmt.Errorf("areas and board size do not match, areas: %d, board size: %d", len(a), i)
+	}
 
 	g := board1.NewGame(i, i, a...)
 	// solve
@@ -97,6 +105,10 @@ func run(args []string) error {
 		}
 		return b, nil
 	}()
+
+	if err != nil {
+		return err
+	}
 
 	b.Print()
 	fmt.Printf("solve called: %d\n", g.SolveCalled())
@@ -117,7 +129,10 @@ func run(args []string) error {
 }
 
 func main() {
-	
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	logger = logger.With(
+		"application", "queens")
+	slog.SetDefault(logger)
 
 	run(os.Args)
 }

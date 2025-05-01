@@ -85,6 +85,7 @@ type Game struct {
 	BoardPool *BoardPool
 
 	solveCalled int
+	queenPlaced int64
 }
 
 func NewGame(rows, cols int, areas ...Area) *Game {
