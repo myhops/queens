@@ -23,8 +23,6 @@ func TestLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("dim %d, areas: %#v", i, a)
-	// t.Error()
 
 	g := NewGame(i, i, a...)
 	s := &SimpleSolver{}
@@ -34,7 +32,6 @@ func TestLoad(t *testing.T) {
 	}
 
 	b.Print()
-	// t.Error()
 }
 
 func TestLoad2(t *testing.T) {
@@ -54,8 +51,6 @@ func TestLoad2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("dim %d, areas: %#v", i, a)
-	// t.Error()
 
 	g := NewGame(i, i, a...)
 	s := &SimpleSolver{}
@@ -68,7 +63,6 @@ func TestLoad2(t *testing.T) {
 
 	t.Logf("solve called: %d", g.SolveCalled())
 	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
-	// t.Error()
 }
 
 
@@ -89,8 +83,6 @@ func TestLoad3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("dim %d, areas: %#v", i, a)
-	// t.Error()
 
 	g := NewGame(i, i, a...)
 	s := &SimpleSolver{}
@@ -103,7 +95,6 @@ func TestLoad3(t *testing.T) {
 
 	t.Logf("solve called: %d", g.SolveCalled())
 	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
-	// t.Error()
 }
 
 func TestLoad4(t *testing.T) {
@@ -123,8 +114,6 @@ func TestLoad4(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("dim %d, areas: %#v", i, a)
-	// t.Error()
 
 	g := NewGame(i, i, a...)
 	s := &AreaSolver{}
@@ -137,7 +126,6 @@ func TestLoad4(t *testing.T) {
 
 	t.Logf("solve called: %d", g.SolveCalled())
 	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
-	// t.Error()
 }
 
 func TestLoad5(t *testing.T) {
@@ -155,8 +143,6 @@ func TestLoad5(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// t.Logf("dim %d, areas: %#v", i, a)
-	// t.Error()
 
 	g := NewGame(i, i, a...)
 	s := &AreaSolver{}
@@ -169,5 +155,4 @@ func TestLoad5(t *testing.T) {
 
 	t.Logf("solve called: %d", g.SolveCalled())
 	t.Logf("boards used: %d", g.BoardPool.MaxEntries())
-	// t.Error()
 }
