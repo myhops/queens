@@ -122,6 +122,7 @@ func (b *Board) Get(row, col int) State {
 type Position []int // row, col
 
 func (g *Game) PlaceQueen(b *Board, row, col int) error {
+	g.queenPlaced++
 	if b.Get(row, col) != Empty {
 		return fmt.Errorf("position (%d, %d) is occupied with %s", row, col, b.Get(row, col).String())
 	}
@@ -133,7 +134,6 @@ func (g *Game) PlaceQueen(b *Board, row, col int) error {
 	if a := g.inArea(row, col); a != nil {
 		b.blockArea(a)
 	}
-	g.queenPlaced++
 	return nil
 }
 
