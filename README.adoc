@@ -1,5 +1,10 @@
-= Peter was here
-Peter Zandbergen
+= Queens
+Peter Zandbergen <peter.zandbergen@myhops.com>
 
-== Chapter 1
+Solves the LinkedIn Queens puzzle.
+
+== Why?
+
+Why not, programming is like solving a puzzle.
+
 
